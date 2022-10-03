@@ -35,17 +35,21 @@ namespace dotnet_rpg.Services.CharacterService
         public async Task<ServiceResponse<List<GetCharacterDto>>> DeleteCharacter(int id)
         {
             ServiceResponse<List<GetCharacterDto>> response = new ServiceResponse<List<GetCharacterDto>>();
-            try{
-            Character character = await _context.Characters.FirstAsync(c => c.Id == id);
-            _context.Characters.Remove(character);
-            await _context.SaveChangesAsync();
-            response.Data = _context.Characters.Select(c => _mapper.Map<GetCharacterDto>(c)).ToList();
-            }
-            catch(Exception ex)
+
+            try
             {
-                response.Message = ex.Message;
-                response.Success = false;
+                Character character = await _context.Characters.FirstAsync(c => c.Id == id);
+                _context.Characters.Remove(character);
+                await _context.SaveChangesAsync();
+
+                response.Data = _context.Characters.Select(c => _mapper.Map<GetCharacterDto>(c)).ToList();
             }
+            catch (Exception ex)
+            {
+                response.Success = false;
+                response.Message = ex.Message;
+            }
+
             return response;
         }
 
@@ -68,17 +72,29 @@ namespace dotnet_rpg.Services.CharacterService
         public async Task<ServiceResponse<GetCharacterDto>> UpdateCharacter(UpdateCharacterDto updatedCharacter)
         {
             ServiceResponse<GetCharacterDto> response = new ServiceResponse<GetCharacterDto>();
-            try{
-            var character = await _context.Characters.FirstOrDefaultAsync(c =>  c.Id == updatedCharacter.Id);
 
-            _mapper.Map(updatedCharacter, character);
+            try
+            {
+                var character = await _context.Characters
+                    .FirstOrDefaultAsync(c => c.Id == updatedCharacter.Id);
 
-            await _context.SaveChangesAsync();
-            response.Data = _mapper.Map<GetCharacterDto>(character);
-            }catch(Exception ex){
+                character.Name = updatedCharacter.Name;
+                character.HitPoints = updatedCharacter.HitPoints;
+                character.Strength = updatedCharacter.Strength;
+                character.Defense = updatedCharacter.Defense;
+                character.Intelligence = updatedCharacter.Intelligence;
+                character.Class = updatedCharacter.Class;
+
+                await _context.SaveChangesAsync();
+
+                response.Data = _mapper.Map<GetCharacterDto>(character);
+            }
+            catch (Exception ex)
+            {
                 response.Success = false;
                 response.Message = ex.Message;
             }
+
             return response;
         }
     }

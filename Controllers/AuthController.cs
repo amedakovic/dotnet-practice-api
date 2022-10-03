@@ -12,30 +12,31 @@ namespace dotnet_rpg.Controllers
     [Route("[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly IAuthRepository _authReop;
+        private readonly IAuthRepository _authRepo;
 
-        public AuthController(IAuthRepository authReop)
-         {
-            _authReop = authReop;
+        public AuthController(IAuthRepository authRepo)
+        {
+            _authRepo = authRepo;
         }
 
         [HttpPost("register")]
         public async Task<ActionResult<ServiceResponse<int>>> Register(UserRegisterDto request)
         {
-            var response = await _authReop.Register(
-                new User{ Username = request.Username}, request.Password
+            var response = await _authRepo.Register(
+                new User { Username = request.Username }, request.Password
             );
-            if(!response.Success)
+            if (!response.Success)
             {
                 return BadRequest(response);
             }
             return Ok(response);
         }
+
         [HttpPost("login")]
         public async Task<ActionResult<ServiceResponse<string>>> Login(UserLoginDto request)
         {
-            var response = await _authReop.Login(request.Username, request.Password);
-            if(!response.Success)
+            var response = await _authRepo.Login(request.Username, request.Password);
+            if (!response.Success)
             {
                 return BadRequest(response);
             }

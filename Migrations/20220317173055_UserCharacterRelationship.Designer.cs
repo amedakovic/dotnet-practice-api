@@ -12,14 +12,14 @@ using dotnet_rpg.Data;
 namespace dotnet_rpg.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20221003135931_UserModel")]
-    partial class UserModel
+    [Migration("20220317173055_UserCharacterRelationship")]
+    partial class UserCharacterRelationship
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.9")
+                .HasAnnotation("ProductVersion", "6.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
@@ -51,7 +51,12 @@ namespace dotnet_rpg.Migrations
                     b.Property<int>("Strength")
                         .HasColumnType("int");
 
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Characters");
                 });
@@ -79,6 +84,20 @@ namespace dotnet_rpg.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("dotnet_rpg.Models.Character", b =>
+                {
+                    b.HasOne("dotnet_rpg.Models.User", "User")
+                        .WithMany("Characters")
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("dotnet_rpg.Models.User", b =>
+                {
+                    b.Navigation("Characters");
                 });
 #pragma warning restore 612, 618
         }

@@ -19,53 +19,55 @@ namespace dotnet_rpg.Data
             _context = context;
             _configuration = configuration;
         }
+
         public async Task<ServiceResponse<string>> Login(string username, string password)
         {
             var response = new ServiceResponse<string>();
             var user = await _context.Users
-                .FirstOrDefaultAsync(U => U.Username.ToLower().Equals(username.ToLower()));
-            
-            if(user == null)
+                .FirstOrDefaultAsync(u => u.Username.ToLower().Equals(username.ToLower()));
+
+            if (user == null)
             {
                 response.Success = false;
-                response.Message = "User not found";
+                response.Message = "User not found.";
             }
-            else if(!VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))
+            else if (!VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))
             {
                 response.Success = false;
-                response.Message = "Wrong password";
+                response.Message = "Wrong password.";
             }
             else
             {
                 response.Data = CreateToken(user);
             }
+
             return response;
         }
 
         public async Task<ServiceResponse<int>> Register(User user, string password)
         {
             ServiceResponse<int> response = new ServiceResponse<int>();
-            if(await UserExists(user.Username))
+            if (await UserExists(user.Username))
             {
                 response.Success = false;
-                response.Message = "User already exists";
+                response.Message = "User already exists.";
                 return response;
             }
+
             CreatePasswordHash(password, out byte[] passwordHash, out byte[] passwordSalt);
-           
+
             user.PasswordHash = passwordHash;
             user.PasswordSalt = passwordSalt;
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-
             response.Data = user.Id;
             return response;
         }
 
         public async Task<bool> UserExists(string username)
         {
-            if(await _context.Users.AnyAsync(u => u.Username.ToLower() == username.ToLower()))
+            if (await _context.Users.AnyAsync(u => u.Username.ToLower() == username.ToLower()))
             {
                 return true;
             }
@@ -83,16 +85,16 @@ namespace dotnet_rpg.Data
 
         private bool VerifyPasswordHash(string password, byte[] passwordHash, byte[] passwordSalt)
         {
-            using(var hmac = new System.Security.Cryptography.HMACSHA512(passwordSalt))
+            using (var hmac = new System.Security.Cryptography.HMACSHA512(passwordSalt))
             {
-                var ComputeHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
-                return ComputeHash.SequenceEqual(passwordHash);
+                var computeHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+                return computeHash.SequenceEqual(passwordHash);
             }
         }
 
         private string CreateToken(User user)
         {
-            List<Claim> claims = new List<Claim>{
+            List<Claim> claims = new List<Claim> {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.Username)
             };
@@ -100,17 +102,17 @@ namespace dotnet_rpg.Data
             SymmetricSecurityKey key = new SymmetricSecurityKey(System.Text.Encoding.UTF8
                 .GetBytes(_configuration.GetSection("AppSettings:Token").Value));
 
-            SigningCredentials credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+            SigningCredentials creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
 
-            SecurityTokenDescriptor tokenDescriptor = new SecurityTokenDescriptor{
+            SecurityTokenDescriptor tokenDescriptor = new SecurityTokenDescriptor
+            {
                 Subject = new ClaimsIdentity(claims),
-                Expires = System.DateTime.Now.AddDays(1),
-                SigningCredentials = credentials
+                Expires = DateTime.Now.AddDays(1),
+                SigningCredentials = creds
             };
 
             JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
             SecurityToken token = tokenHandler.CreateToken(tokenDescriptor);
-
 
             return tokenHandler.WriteToken(token);
         }
